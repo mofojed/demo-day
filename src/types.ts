@@ -1,7 +1,13 @@
 export type ScreenResolution = [width: number, height: number];
 
 export type DrawableContext = {
+  /** Video element of the users video */
+  video: HTMLVideoElement;
+
+  /** Video element of the users screen share */
+  screen: HTMLVideoElement;
   context: CanvasRenderingContext2D;
+  resolution: ScreenResolution;
 };
 
 export type Drawable = {
