@@ -43,6 +43,7 @@ function App() {
       const renderInterval = setInterval(function drawFrame() {
         // This is just an example, it's showing how to render it and then convert it to greyscale
         // However this is re-rendering in the same canvas. We may need to do it in another canvas so it can be layered properly...
+        context.save();
         context.drawImage(screen, 0, 0, width, height);
         const frame = context.getImageData(0, 0, width, height);
         const l = frame.data.length / 4;
@@ -65,6 +66,7 @@ function App() {
         context.arc(260, 220, 120, 0, Math.PI * 2, true);
         context.clip();
         context.drawImage(video, 100, 100, 320, 240);
+        context.restore();
       }, 16);
 
       const recordStream = canvas.captureStream(60);
