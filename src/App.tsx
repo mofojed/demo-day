@@ -57,6 +57,10 @@ function App() {
         }
         context.putImageData(frame, 0, 0);
 
+        // Now draw the user, but mask the limage so it's in a circle
+        context.beginPath();
+        context.arc(260, 220, 120, 0, Math.PI * 2, true);
+        context.clip();
         context.drawImage(video, 100, 100, 320, 240);
       }, 16);
     } catch (e) {
