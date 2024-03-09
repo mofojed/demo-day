@@ -18,6 +18,9 @@ function App() {
 
   const handleStart = useCallback(async () => {
     try {
+      const audioStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
       const videoStream = await navigator.mediaDevices.getUserMedia({
         video: true,
       });
@@ -66,7 +69,7 @@ function App() {
 
       const recordStream = canvas.captureStream(60);
       // TODO: Add audio
-      // recordStream.addTrack(audio.getAudioTracks()[0]);
+      recordStream.addTrack(audioStream.getAudioTracks()[0]);
       const recorder = new MediaRecorder(recordStream);
       const recordedChunks: Blob[] = [];
 
