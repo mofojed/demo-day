@@ -10,11 +10,11 @@ function App() {
   const canvasElement = useRef<HTMLCanvasElement>(null);
   const width = 1920;
   const height = 1080;
-
-  // useEffect(() => {
-  //   async function initVideo() {}
-  //   initVideo();
-  // }, []);
+  const [isRecording, setIsRecording] = useState(false);
+  const [streams, setStreams] = useState<MediaStream[]>([]);
+  const [renderInterval, setRenderInterval] =
+    useState<ReturnType<typeof setInterval>>(0);
+  const [recorder, setRecorder] = useState<MediaRecorder | null>(null);
 
   const handleStart = useCallback(async () => {
     try {
@@ -37,7 +37,7 @@ function App() {
       video.srcObject = videoStream;
       screen.srcObject = screenStream;
 
-      setInterval(function drawFrame() {
+      const renderInterval = setInterval(function drawFrame() {
         // This is just an example, it's showing how to render it and then convert it to greyscale
         // However this is re-rendering in the same canvas. We may need to do it in another canvas so it can be layered properly...
         context.drawImage(screen, 0, 0, width, height);
@@ -63,10 +63,52 @@ function App() {
         context.clip();
         context.drawImage(video, 100, 100, 320, 240);
       }, 16);
+
+      const recordStream = canvas.captureStream(60);
+      // TODO: Add audio
+      // recordStream.addTrack(audio.getAudioTracks()[0]);
+      const recorder = new MediaRecorder(recordStream);
+      const recordedChunks: Blob[] = [];
+
+      recorder.ondataavailable = function (e) {
+        log.info("Data available", e);
+        if (e.data.size > 0) {
+          recordedChunks.push(e.data);
+        }
+      };
+      recorder.onstop = function () {
+        log.info("Recording stopped");
+        const blob = new Blob(recordedChunks, {
+          type: "video/webm",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "test.webm";
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+      recorder.start();
+
+      setStreams([videoStream, screenStream, recordStream]);
+      setRenderInterval(renderInterval);
+      setIsRecording(true);
+      setRecorder(recorder);
     } catch (e) {
       log.error("Unable to get video stream", e);
     }
   }, []);
+
+  const handleStop = useCallback(() => {
+    clearInterval(renderInterval);
+    streams.forEach((stream) => {
+      stream.getTracks().forEach((track) => track.stop());
+    });
+    videoElement.current!.srcObject = null;
+    screenElement.current!.srcObject = null;
+    recorder?.stop();
+    setIsRecording(false);
+  }, [recorder, renderInterval, streams]);
 
   return (
     <>
@@ -88,7 +130,11 @@ function App() {
           style={{ display: "none" }}
           ref={screenElement}
         ></video>
-        <button onClick={handleStart}>Start</button>
+        {!isRecording ? (
+          <button onClick={handleStart}>Start</button>
+        ) : (
+          <button onClick={handleStop}>Stop</button>
+        )}
         <canvas
           id="canvas"
           width={width}
