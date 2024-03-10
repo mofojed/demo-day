@@ -9,7 +9,10 @@ import {
 import Log from "@deephaven/log";
 import introVideo from "/logo-intro-2022.mp4";
 import "./App.css";
-import { Drawable, DrawableContext } from "./types";
+import { Drawable, DrawableContext, Resolution } from "./types";
+
+const DEFAULT_FPS = 24;
+const DEFAULT_RESOLUTION: Resolution = [1920, 1080];
 
 const log = Log.module("App");
 
@@ -79,13 +82,20 @@ const screenScene = {
 
 const scenes: Drawable[] = [sceneIntro, userScene, demoScene, screenScene];
 
-function App() {
+type AppProps = {
+  fps?: number;
+  resolution?: [number, number];
+};
+
+function App({
+  fps = DEFAULT_FPS,
+  resolution = DEFAULT_RESOLUTION,
+}: AppProps = {}) {
+  const [width, height] = resolution;
   const videoElement = useRef<HTMLVideoElement>(null);
   const screenElement = useRef<HTMLVideoElement>(null);
   const canvasElement = useRef<HTMLCanvasElement>(null);
   const outputVideoElement = useRef<HTMLVideoElement>(null);
-  const width = 1920;
-  const height = 1080;
   const [isRecording, setIsRecording] = useState(false);
   const [streams, setStreams] = useState<MediaStream[]>([]);
   const [renderInterval, setRenderInterval] =
@@ -137,9 +147,9 @@ function App() {
           video,
           screen,
         });
-      }, 32);
+      }, 1000 / fps);
 
-      const outputStream = canvas.captureStream(24);
+      const outputStream = canvas.captureStream(fps);
       outputStream.addTrack(audioStream.getAudioTracks()[0]);
 
       outputVideo.srcObject = outputStream;
@@ -201,7 +211,7 @@ function App() {
     } catch (e) {
       log.error("Unable to get video stream", e);
     }
-  }, [handleStop]);
+  }, [fps, handleStop, height, width]);
 
   return (
     <div className="app-view">
@@ -232,8 +242,6 @@ function App() {
       <h1>Demo Day</h1>
       <video
         id="video"
-        // width={width}
-        // height={height}
         controls={false}
         ref={outputVideoElement}
         loop
