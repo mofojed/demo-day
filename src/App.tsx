@@ -7,7 +7,7 @@ import {
   vsTriangleRight,
 } from "@deephaven/icons";
 import Log from "@deephaven/log";
-import introVideo from "/logo-intro-2022.mp4";
+import introVideo from "/intro.mp4";
 import "./App.css";
 import { Drawable, DrawableContext, Resolution } from "./types";
 
