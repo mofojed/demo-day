@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { Button } from "@deephaven/components";
 import Log from "@deephaven/log";
+import introVideo from "/logo-intro-2022.mp4";
 import "./App.css";
 import { Drawable, DrawableContext } from "./types";
 
@@ -48,6 +49,20 @@ const demoScene = {
   },
 };
 
+const introElement = document.createElement("video");
+introElement.src = introVideo;
+introElement.loop = true;
+introElement.muted = true;
+introElement.play();
+
+const sceneIntro = {
+  draw: (drawableContext: DrawableContext) => {
+    const { context, resolution } = drawableContext;
+    const [width, height] = resolution;
+    context.drawImage(introElement, 0, 0, width, height);
+  },
+};
+
 const screenScene = {
   draw: (drawableContext: DrawableContext) => {
     const { context, resolution, screen } = drawableContext;
@@ -56,7 +71,7 @@ const screenScene = {
   },
 };
 
-const scenes: Drawable[] = [userScene, demoScene, screenScene];
+const scenes: Drawable[] = [sceneIntro, userScene, demoScene, screenScene];
 
 function App() {
   const videoElement = useRef<HTMLVideoElement>(null);
@@ -93,6 +108,7 @@ function App() {
       const outputVideo = outputVideoElement.current!;
       const outputStream = canvas.captureStream(60);
       outputVideo.srcObject = outputStream;
+      outputVideo.play();
 
       const audioStream = await navigator.mediaDevices.getUserMedia({
         audio: true,
@@ -217,9 +233,17 @@ function App() {
             Start
           </Button>
         ) : (
-          <Button kind="danger" placeholder="Stop" onClick={handleStop}>
-            Stop
-          </Button>
+          <>
+            <Button kind="secondary" onClick={() => sceneIndex.current--}>
+              Previous Scene
+            </Button>
+            <Button kind="danger" placeholder="Stop" onClick={handleStop}>
+              Stop
+            </Button>
+            <Button kind="secondary" onClick={() => sceneIndex.current++}>
+              Next Scene
+            </Button>
+          </>
         )}
         <canvas
           id="canvas"
@@ -232,8 +256,6 @@ function App() {
           id="video"
           width={width}
           height={height}
-          // controls={false}
-          // style={{ display: "none" }}
           ref={outputVideoElement}
           loop
           autoPlay

@@ -11,6 +11,9 @@ export type DrawableContext = {
 };
 
 export type Drawable = {
+  // TODO: We need a `start` and `stop` method to start and stop the rendering of the drawable.
+  // So we know when to start video or whatever
+  // How will transitions work??
   draw: (drawableContext: DrawableContext) => void;
 };
 
