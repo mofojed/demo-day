@@ -1,5 +1,11 @@
 import { useCallback, useRef, useState } from "react";
-import { Button } from "@deephaven/components";
+import { Button, ButtonGroup } from "@deephaven/components";
+import {
+  vsDebugStop,
+  vsRecord,
+  vsTriangleLeft,
+  vsTriangleRight,
+} from "@deephaven/icons";
 import Log from "@deephaven/log";
 import introVideo from "/logo-intro-2022.mp4";
 import "./App.css";
@@ -94,7 +100,6 @@ function App() {
     });
     videoElement.current!.srcObject = null;
     screenElement.current!.srcObject = null;
-    outputVideoElement.current!.srcObject = null;
     recorder?.stop();
     setIsRecording(false);
   }, [recorder, renderInterval, streams]);
@@ -106,9 +111,6 @@ function App() {
       const video = videoElement.current!;
       const screen = screenElement.current!;
       const outputVideo = outputVideoElement.current!;
-      const outputStream = canvas.captureStream(60);
-      outputVideo.srcObject = outputStream;
-      outputVideo.play();
 
       const audioStream = await navigator.mediaDevices.getUserMedia({
         audio: true,
@@ -135,11 +137,14 @@ function App() {
           video,
           screen,
         });
-      }, 16);
+      }, 32);
 
-      const recordStream = canvas.captureStream(60);
-      recordStream.addTrack(audioStream.getAudioTracks()[0]);
-      const recorder = new MediaRecorder(recordStream);
+      const outputStream = canvas.captureStream(24);
+      outputStream.addTrack(audioStream.getAudioTracks()[0]);
+
+      outputVideo.srcObject = outputStream;
+
+      const recorder = new MediaRecorder(outputStream);
       const recordedChunks: Blob[] = [];
 
       recorder.ondataavailable = function (e) {
@@ -161,12 +166,6 @@ function App() {
         URL.revokeObjectURL(url);
       };
       recorder.start();
-
-      // const canvasVideo = document.createElement("video");
-      // canvasVideo.srcObject = recordStream;
-      // canvasVideo.muted = true;
-      // canvasVideo.loop = true;
-      // canvasVideo.play();
 
       navigator.mediaSession.playbackState = "playing";
       navigator.mediaSession.setActionHandler("play", () => {
@@ -195,7 +194,7 @@ function App() {
         ],
       });
 
-      setStreams([videoStream, screenStream, recordStream]);
+      setStreams([videoStream, screenStream, outputStream]);
       setRenderInterval(renderInterval);
       setIsRecording(true);
       setRecorder(recorder);
@@ -205,63 +204,74 @@ function App() {
   }, [handleStop]);
 
   return (
-    <>
-      <h1>Demo Day</h1>
-      <div>
+    <div className="app-view">
+      {/* Some elements that we use for video streams and rendering the scene, but we don't want the user to actually see them */}
+      <div style={{ display: "none" }}>
         <video
           id="video"
           width={width}
           height={height}
           controls={false}
-          style={{ display: "none" }}
           ref={videoElement}
           loop
           autoPlay
-        ></video>
+        />
         <video
           id="video"
           width={width}
           height={height}
           controls={false}
-          style={{ display: "none" }}
           ref={screenElement}
           loop
           autoPlay
-        ></video>
-        {!isRecording ? (
-          <Button kind="primary" placeholder="Start" onClick={handleStart}>
-            Start
-          </Button>
-        ) : (
-          <>
-            <Button kind="secondary" onClick={() => sceneIndex.current--}>
-              Previous Scene
-            </Button>
-            <Button kind="danger" placeholder="Stop" onClick={handleStop}>
-              Stop
-            </Button>
-            <Button kind="secondary" onClick={() => sceneIndex.current++}>
-              Next Scene
-            </Button>
-          </>
-        )}
-        <canvas
-          id="canvas"
-          width={width}
-          height={height}
-          ref={canvasElement}
-          style={{ background: "salmon", display: "none" }}
-        ></canvas>
-        <video
-          id="video"
-          width={width}
-          height={height}
-          ref={outputVideoElement}
-          loop
-          autoPlay
-        ></video>
+        />
+        <canvas id="canvas" width={width} height={height} ref={canvasElement} />
       </div>
-    </>
+
+      {/* Start of the actual content we want the user to see */}
+      <h1>Demo Day</h1>
+      <video
+        id="video"
+        // width={width}
+        // height={height}
+        controls={false}
+        ref={outputVideoElement}
+        loop
+        autoPlay
+        muted
+        style={{ background: "salmon" }}
+      />
+      <ButtonGroup>
+        <Button
+          kind="secondary"
+          icon={vsTriangleLeft}
+          tooltip="Previous Scene"
+          onClick={() => sceneIndex.current--}
+        />
+        {!isRecording ? (
+          <Button
+            kind="danger"
+            icon={vsRecord}
+            tooltip="Record"
+            onClick={handleStart}
+            style={{ background: "transparent" }}
+          />
+        ) : (
+          <Button
+            kind="danger"
+            icon={vsDebugStop}
+            tooltip="Stop"
+            onClick={handleStop}
+          />
+        )}
+        <Button
+          kind="secondary"
+          icon={vsTriangleRight}
+          tooltip="Next Scene"
+          onClick={() => sceneIndex.current++}
+        />
+      </ButtonGroup>
+    </div>
   );
 }
 
