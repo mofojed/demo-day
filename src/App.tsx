@@ -119,8 +119,6 @@ function App() {
       const context = canvas.getContext("2d")!;
       video.srcObject = videoStream;
       screen.srcObject = screenStream;
-      video.play();
-      screen.play();
 
       const renderInterval = setInterval(function drawFrame() {
         // This is just an example, it's showing how to render it and then convert it to greyscale
@@ -248,6 +246,7 @@ function App() {
           style={{ display: "none" }}
           ref={videoElement}
           loop
+          autoPlay
         ></video>
         <video
           id="video"
@@ -257,6 +256,7 @@ function App() {
           style={{ display: "none" }}
           ref={screenElement}
           loop
+          autoPlay
         ></video>
         {!isRecording ? (
           <button onClick={handleStart}>Start</button>
