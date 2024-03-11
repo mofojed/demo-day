@@ -1,14 +1,17 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Button, ButtonGroup } from "@deephaven/components";
 import {
   vsDebugStop,
+  vsDeviceCameraVideo,
+  vsUnmute,
   vsRecord,
+  vsVm,
   vsTriangleLeft,
   vsTriangleRight,
 } from "@deephaven/icons";
 import Log from "@deephaven/log";
 import introVideo from "/intro.mp4";
-import "./App.css";
+import "./App.scss";
 import { Drawable, DrawableContext, Resolution } from "./types";
 
 const DEFAULT_FPS = 24;
@@ -33,21 +36,26 @@ const demoScene = {
     // However this is re-rendering in the same canvas. We may need to do it in another canvas so it can be layered properly...
     context.save();
     context.drawImage(screen, 0, 0, width, height);
-    const frame = context.getImageData(0, 0, width, height);
-    const l = frame.data.length / 4;
+    // TODO: If we want to do image manipulation like this, we really should do it in WebGL
+    // This is way too slow, takes about 27ms just to render a single frame changing all the data to grayscale
+    // Without this operation, it takes <1ms to render a frame
 
-    for (let i = 0; i < l; i++) {
-      const grey =
-        (frame.data[i * 4 + 0] +
-          frame.data[i * 4 + 1] +
-          frame.data[i * 4 + 2]) /
-        3;
+    // const frame = context.getImageData(0, 0, width, height);
+    // const l = frame.data.length / 4;
 
-      frame.data[i * 4 + 0] = grey;
-      frame.data[i * 4 + 1] = grey;
-      frame.data[i * 4 + 2] = grey;
-    }
-    context.putImageData(frame, 0, 0);
+    // for (let i = 0; i < l; i++) {
+    //   const grey =
+    //     (frame.data[i * 4 + 0] +
+    //       frame.data[i * 4 + 1] +
+    //       frame.data[i * 4 + 2]) /
+    //     3;
+
+    //   frame.data[i * 4 + 0] = grey;
+    //   frame.data[i * 4 + 1] = grey;
+    //   frame.data[i * 4 + 2] = grey;
+    // }
+    // context.putImageData(frame, 0, 0);
+    // End of grayscale operation (which is slow af)
 
     // Now draw the user, but mask the limage so it's in a circle
     context.beginPath();
@@ -215,31 +223,11 @@ function App({
 
   return (
     <div className="app-view">
-      {/* Some elements that we use for video streams and rendering the scene, but we don't want the user to actually see them */}
-      <div style={{ display: "none" }}>
-        <video
-          id="video"
-          width={width}
-          height={height}
-          controls={false}
-          ref={videoElement}
-          loop
-          autoPlay
-        />
-        <video
-          id="video"
-          width={width}
-          height={height}
-          controls={false}
-          ref={screenElement}
-          loop
-          autoPlay
-        />
-        <canvas id="canvas" width={width} height={height} ref={canvasElement} />
-      </div>
-
-      {/* Start of the actual content we want the user to see */}
-      <h1>Demo Day</h1>
+      <ButtonGroup>
+        <Button kind="tertiary" icon={vsUnmute} tooltip="Microphone" />
+        <Button kind="tertiary" icon={vsDeviceCameraVideo} tooltip="Camera" />
+        <Button kind="tertiary" icon={vsVm} tooltip="Screenshare" />
+      </ButtonGroup>
       <video
         id="video"
         controls={false}
@@ -279,6 +267,29 @@ function App({
           onClick={() => sceneIndex.current++}
         />
       </ButtonGroup>
+
+      {/* Some elements that we use for video streams and rendering the scene, but we don't want the user to actually see them */}
+      <div style={{ display: "none" }}>
+        <video
+          id="video"
+          width={width}
+          height={height}
+          controls={false}
+          ref={videoElement}
+          loop
+          autoPlay
+        />
+        <video
+          id="video"
+          width={width}
+          height={height}
+          controls={false}
+          ref={screenElement}
+          loop
+          autoPlay
+        />
+        <canvas id="canvas" width={width} height={height} ref={canvasElement} />
+      </div>
     </div>
   );
 }
