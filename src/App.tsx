@@ -235,7 +235,6 @@ function App({
         loop
         autoPlay
         muted
-        style={{ background: "salmon" }}
       />
       <ButtonGroup>
         <Button
